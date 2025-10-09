@@ -15,11 +15,12 @@ def add_to_startup_W(file_path = os.path.realpath('Calendars.py')): # ДОБАВ
     # Создаем bat-файл
     bat_file_path = os.path.join(bat_path, "autoopen.bat")
 
-    try: 
-        with open(bat_file_path, 'w+') as f: # ЗАПИСЬ КОМАНД В БАТ
-            f.write(f'start "" "{file_path}"')
+    try:
+        # Используем sys.executable для запуска через текущий интерпретатор
+        with open(bat_file_path, 'w+') as f:
+            f.write(f'start "" "{sys.executable}" "{file_path}"')
+        f.close()
         print(f"Файл автозагрузки создан: {bat_file_path}")
-        
     except Exception as e:
         print(f"Ошибка при создании файла автозагрузки: {e}")
 
@@ -31,8 +32,6 @@ def add_to_startup_W(file_path = os.path.realpath('Calendars.py')): # ДОБАВ
 
 # ДОБАВЕНИЕ БАТ-ФАЙЛА ДЛЯ РЕЗЕРВИРОВАНИЯ ПО ИНТЕРВАЛУ В ИНУКС
 def add_to_startup_Linux(file_path=os.path.realpath('Calendars.py')):
-    
-
     # Определяем домашнюю директорию
     home_dir = os.path.expanduser('~')
     
@@ -46,7 +45,7 @@ def add_to_startup_Linux(file_path=os.path.realpath('Calendars.py')):
     desktop_content = f"""[Desktop Entry]
 Type=Application
 Name=AutoOpen
-Exec=python3 "{file_path}"
+Exec={sys.executable} "{file_path}"
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
@@ -61,6 +60,7 @@ X-GNOME-Autostart-enabled=true
         # 5 5 - ЧТЕНИЕ, ВЫПОЛНЕНИЕ
         os.chmod(desktop_file, 0o755)
         print(f"Файл автозагрузки создан: {desktop_file}")
+        f.close()
 
     except Exception as e:
         print(f"Ошибка при создании файла автозагрузки: {e}")
@@ -69,20 +69,23 @@ X-GNOME-Autostart-enabled=true
 
 # Для macOS
 def add_to_startup_MAC(file_path=os.path.realpath('Calendars.py')):
-            # Создаем launchd plist файл
-        plist_dir = os.path.join(home_dir, 'Library', 'LaunchAgents')
-        plist_file = os.path.join(plist_dir, 'com.user.autoopen.plist')
-        
-        # нашел код для бат файла на макОС
-        plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
+    # Определяем домашнюю директорию
+    home_dir = os.path.expanduser('~')
+
+    # Создаем launchd plist файл
+    plist_dir = os.path.join(home_dir, 'Library', 'LaunchAgents')
+    plist_file = os.path.join(plist_dir, 'com.user.autoopen.plist')
+    
+    # Используем sys.executable для запуска через текущий интерпретатор
+    plist_content = f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
 <dict>
     <key>Label</key>
     <string>com.user.autoopen</string>
     <key>ProgramArguments</key>
     <array>
-        <string>python3</string>
+        <string>{sys.executable}</string>
         <string>{file_path}</string>
     </array>
     <key>RunAtLoad</key>
@@ -90,15 +93,18 @@ def add_to_startup_MAC(file_path=os.path.realpath('Calendars.py')):
 </dict>
 </plist>
 """
-        try:
-            os.makedirs(plist_dir, exist_ok=True)
-            with open(plist_file, 'w') as f:
-                f.write(plist_content)
-            print(f"Файл автозагрузки создан: {plist_file}")
-            return True
-        except Exception as e:
-            print(f"Ошибка при создании файла автозагрузки: {e}")
-            return False
+    try:
+        os.makedirs(plist_dir, exist_ok=True)
+        with open(plist_file, 'w') as f:
+            f.write(plist_content)
+
+        # Устанавливаем права доступа к plist-файлу
+        os.chmod(plist_file, 0o755)
+        print(f"Файл автозагрузки создан: {plist_file}")
+        f.close()
+        
+    except Exception as e:
+        print(f"Ошибка при создании файла автозагрузки: {e}")
 
 
 
@@ -116,7 +122,7 @@ def start():
     if syst == 'Windows':
         add_to_startup_W()
     elif syst =='Linux':
-        add_to_startup_LOS()
+        add_to_startup_Linux()
     elif syst=='Darwin':
         add_to_startup_MAC()
     else:
@@ -125,23 +131,23 @@ def start():
 
 # Дополнительная функция для удаления из автозагрузки
 def remove_from_startup():
-    system = platform.system()
-    
-    if system == 'Windows':
-        bat_path = os.path.join(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', "autoopen.bat")
-        if os.path.exists(bat_path):
-            os.remove(bat_path)
-            print("Файл автозагрузки удален")
-    
-    elif system == 'Linux':
-        desktop_file = os.path.expanduser('~/.config/autostart/autoopen.desktop')
-        if os.path.exists(desktop_file):
-            os.remove(desktop_file)
-            print("Файл автозагрузки удален")
-    
-    elif system == 'Darwin':
-        plist_file = os.path.expanduser('~/Library/LaunchAgents/com.user.autoopen.plist')
-        if os.path.exists(plist_file):
-            os.remove(plist_file)
-            print("Файл автозагрузки удален")
+        system = platform.system()
+        try:
+            if system == 'Windows':
+                bat_path = os.path.join(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', "autoopen.bat")
+                if os.path.exists(bat_path):
+                    os.remove(bat_path)
+                    print("Файл автозагрузки удален")
+            elif system == 'Linux':
+                desktop_file = os.path.expanduser('~/.config/autostart/autoopen.desktop')
+                if os.path.exists(desktop_file):
+                    os.remove(desktop_file)
+                    print("Файл автозагрузки удален")
+            elif system == 'Darwin':
+                plist_file = os.path.expanduser('~/Library/LaunchAgents/com.user.autoopen.plist')
+                if os.path.exists(plist_file):
+                    os.remove(plist_file)
+                    print("Файл автозагрузки удален")
+        except Exception as e:
+            print(f"Ошибка при удалении файла автозагрузки: {e}")
 

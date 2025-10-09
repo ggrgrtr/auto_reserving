@@ -11,6 +11,7 @@ def read_info_saves():
         for i in range(0, len(a) - 4):
             if a[i][0:3] == '-> ':
                 data[a[i][3:]] = [a[i + 1], a[i + 2], a[i + 3], a[i + 4]]
+    f.close()
     a.clear()
     return data
 
@@ -20,11 +21,12 @@ def read_info_saves():
 
 class dir_i:  # класс директории, которую резервируем
 
-    def __init__(self, MotherPath, generalDir, copy_from, calendar, reserve_count): # ПУТЬ РЕЗЕРВА \ НАЗВАНИЕ РЕЗЕРВА \ ИЗНАЧАЬНЫЙ ПУТЬ \ ВРЕМЯ \ НОМЕР РЕЗЕРВА
-        
+    def __init__(self, MotherPath, generalDir, copy_from, calendar,
+                 reserve_count):  # ПУТЬ РЕЗЕРВА \ НАЗВАНИЕ РЕЗЕРВА \ ИЗНАЧАЬНЫЙ ПУТЬ \ ВРЕМЯ \ НОМЕР РЕЗЕРВА
+
         # СООЗДАНИЕ ПОЛНОГО ПУТИ ДО МЕСТА РЕЗЕРВИРОВАНИЯ
         self.MotherPath = MotherPath
-        self.generalDir = generalDir.replace('\n','')
+        self.generalDir = generalDir.replace('\n', '')
         self.copy_from = copy_from.replace('/', '\\')
         self.source_path = os.path.join(MotherPath, generalDir)
         self.calendar = calendar
@@ -33,13 +35,14 @@ class dir_i:  # класс директории, которую резервир
         self.source_path = self.source_path[0:-1]
         self.final_path = os.path.join(self.source_path, f"reserve_{self.reserve_count}")
         self.final_path = self.final_path.replace('/', '\\')
+        self.exeption = False
 
     def to_saveData(self, datas):  # сохранение данных о резервах
         if self.exeption != True:
             return self.exeption
         datas[self.generalDir] = [self.MotherPath, self.copy_from, self.calendar, self.reserve_count]
         print('reses:')
-        print(self.generalDir,self.calendar)
+        print(self.generalDir, self.calendar)
         print(datas)
         open('data.txt', 'w').close()  # форматирование файла
 
@@ -53,19 +56,20 @@ class dir_i:  # класс директории, которую резервир
         return self.exeption
 
 
-    def save_vers(self): # ДЛЯ АВТОМАТИЧЕСКОГО РЕЗЕРВИРОВАНИЯ ИЗМЕНЕНИЕ НОМЕРА РЕЗЕРВА
+    def save_vers(self):  # ДЛЯ АВТОМАТИЧЕСКОГО РЕЗЕРВИРОВАНИЯ ИЗМЕНЕНИЕ НОМЕРА РЕЗЕРВА
         with open('data.txt', 'r', encoding='utf-8') as f:
-            t=f.readlines()
-        for i in range(len(t)):
-            if t[i]==self.generalDir:
-                t[i+3]=self.reserve_count+1
-                break
+            t = f.readlines()
         f.close()
 
+        for i in range(len(t)-4):
+            if t[i].startswith('-> ') and t[i][3:].strip() == self.generalDir:
+                # обновляем номер резерва, приводим к строке и добавляем перевод строки
+                t[i + 4] = str(self.reserve_count+1) + '\n'
+                break
         with open('data.txt', 'w', encoding='utf-8') as f:
             f.writelines(t)
+        t.clear()
         f.close()
-
 
     # def create_dir_i(self):
     #
@@ -73,7 +77,7 @@ class dir_i:  # класс директории, которую резервир
     #
     #     return self.final_path
 
-    def reserve_i(self): # СОЗДАНИЕ РЕЗЕРВА С ПОМОЩЬЮ ПОЛНОГО ПУТИ К ИЗНАЧАЛЬНОЙ ПАПКЕ И ПУТИ РЕЗЕРВИРОВАНИЯ
+    def reserve_i(self):  # СОЗДАНИЕ РЕЗЕРВА С ПОМОЩЬЮ ПОЛНОГО ПУТИ К ИЗНАЧАЛЬНОЙ ПАПКЕ И ПУТИ РЕЗЕРВИРОВАНИЯ
         try:
             shutil.copytree(self.copy_from, self.final_path)
             self.exeption = True
@@ -83,30 +87,28 @@ class dir_i:  # класс директории, которую резервир
 
 # ФУНКЦИЯ АВТОМАТИЧЕСКОГО РЕЗЕРВИРОВАНИЯ ПО ПЕРЕДАННОМУ ПРОМЕЖУТКУ: Ч Д Н М
 def calendar_saves(date):
-
     datas = read_info_saves()
 
-    cal=[]
+    cal = []
     for i in datas:
-        if datas[i][2]==date:
+        if datas[i][2] == date:
             cal.append(i)
-    
-    if len(cal)==0:
+
+    if len(cal) == 0:
+        datas.clear()
         return
 
     for i in cal:
-        name=i
-        MotherPath=datas[i][0]
-        copy_from=datas[i][1]
-        calendar=datas[i][2]
+        name = i
+        MotherPath = datas[i][0]
+        copy_from = datas[i][1]
+        calendar = datas[i][2]
         fileX = dir_i(MotherPath, name, copy_from, calendar,
-                            datas[i][3]) 
+                      datas[i][3])
         fileX.reserve_i()  # создание резерва в директории current_backup
         fileX.save_vers()
-
-
+    datas.clear()
+    cal.clear()
 
 def console_show():
-    os.system("start run /k python main.py")
-
-
+    os.system("python [main.py](http://_vscodecontentref_/2)")
