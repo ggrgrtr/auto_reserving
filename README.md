@@ -1,3 +1,5 @@
+full INFO: Reserve_&_paste.pdf
+
 -> cross-platform automatic backup program.
 
 -> library, which need to install: apscheduler (apscheduler.schedulers.background, apscheduler.triggers.cron) 
