@@ -1,4 +1,4 @@
-full INFO: Reserve_&_paste.pdf
+full INFO: **Reserve_&_paste.pdf**
 
 -> cross-platform automatic backup program.
 
